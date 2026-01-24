@@ -29,12 +29,13 @@ NOTIFY_UUID = "1086fff2-3343-4817-8bb2-b32206336ce8"
 # --- TX command codes ---
 
 CMD_AUTH = 0x01
+CMD_BACKLIGHT_ON = 0x02
 CMD_SET_UNITS = 0x20
 CMD_SET_SOUND = 0x21
 CMD_SET_ALARM = 0x23
 CMD_GET_ALARM = 0x24
 CMD_GET_STATUS = 0x26
-CMD_REQUEST = 0x27
+CMD_SNOOZE_ALARM = 0x27
 CMD_TIME_SYNC = 0x28
 CMD_GET_FW = 0x41
 
@@ -327,6 +328,12 @@ class TP902:
         self._transport.send(AUTH_PACKET)
         return self._wait_response(RX_AUTH, timeout_ms)
 
+    def backlight_on(self):
+        """Lights up LCD same as button push
+
+        """
+        self._send(CMD_BACKLIGHT_ON)
+
     def get_firmware_version(self, timeout_ms=5000):
         """Request firmware version.
 
@@ -354,12 +361,10 @@ class TP902:
 
     # --- Public API: fire-and-forget ---
 
-    def request_temperatures(self):
-        """Trigger temperature broadcast.
-
-        Device responds with 0x30 broadcast delivered via on_temperature callback.
+    def snooze_alarm(self):
+        """Snoze beeping alarm until next trigger
         """
-        self._send(CMD_REQUEST, b'')
+        self._send(CMD_SNOOZE_ALARM)
 
     def set_units(self, celsius=True):
         """Set display units.

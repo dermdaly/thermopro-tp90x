@@ -16,7 +16,7 @@ Summary table
 | CMD | Dir | LEN | Meaning | Source |
 | --- | --- | --- | ------- | ------ |
 | 0x01 | TX/RX | 0x0b/0x02 | auth | Implementation |
-| 0x02 | RX | 0x00 | unknown | Observed |
+| 0x02 | TX | 0x00 | backlight on | Observed |
 | 0x03 | RX | 0x01 | unknown | Observed |
 | 0x20 | TX | 0x01 | set units | Implementation |
 | 0x21 | TX | 0x01 | sound alarm | Implementation |
@@ -24,7 +24,7 @@ Summary table
 | 0x24 | TX/RX | 0x01/0x06 | alarm read/response | Implementation |
 | 0x25 | RX | 0x0e | temp snapshot | Implementation |
 | 0x26 | TX/RX | 0x00/0x05 | get status | Implementation |
-| 0x27 | TX | 0x00 | request (trigger) | Observed |
+| 0x27 | TX | 0x00 | snoze alarm | Observed |
 | 0x28 | TX | 0x04 | time sync | Implementation |
 | 0x29 | RX | 0x09 | unknown | Observed |
 | 0x30 | RX | 0x0f | temp broadcast | Implementation |
@@ -40,6 +40,14 @@ Summary table
 **RX:** `LEN=0x02`
 - `DATA[0..1]` auth response (maps device type/probe count; mapping unknown).
 Source: Implementation.
+
+
+0x02 (backlight on)
+-----------
+
+**TX:** `LEN=0x00`
+
+Source: Observed.
 
 0x20 (set units)
 ----------------
@@ -97,10 +105,10 @@ Source: Implementation.
 - `DATA[3..4]` padding.
 Source: Implementation.
 
-0x27 (request/trigger)
+0x27 (snoze alarm)
 ----------------------
 
-**TX:** `LEN=0x00` (no data). Effect unclear; device returns empty response. Not used in APK.
+**TX:** `LEN=0x00` Snoze beeping and/or flashing alarm on device
 Source: Observed.
 
 0x28 (time sync)
