@@ -339,7 +339,7 @@ class TP902:
 
         :returns: FirmwareVersion or None on timeout
         """
-        self._send(CMD_GET_FW, b'')
+        self._send(CMD_GET_FW)
         return self._wait_response(RX_FW_VERSION, timeout_ms)
 
     def get_alarm(self, channel, timeout_ms=5000):
@@ -356,7 +356,7 @@ class TP902:
 
         :returns: DeviceStatus or None on timeout
         """
-        self._send(CMD_GET_STATUS, b'')
+        self._send(CMD_GET_STATUS)
         return self._wait_response(RX_STATUS, timeout_ms)
 
     # --- Public API: fire-and-forget ---
