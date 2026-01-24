@@ -1,0 +1,62 @@
+Main Protocol Class
+===================
+
+.. automodule:: tp902
+   :members: TP902
+   :undoc-members:
+   :show-inheritance:
+
+BLE Constants
+-------------
+
+Service and Characteristic UUIDs:
+
+.. autodata:: tp902.SERVICE_UUID
+.. autodata:: tp902.WRITE_UUID
+.. autodata:: tp902.NOTIFY_UUID
+
+TX Command Codes
+~~~~~~~~~~~~~~~~
+
+.. autodata:: tp902.CMD_AUTH
+.. autodata:: tp902.CMD_BACKLIGHT_ON
+.. autodata:: tp902.CMD_SET_UNITS
+.. autodata:: tp902.CMD_SET_SOUND
+.. autodata:: tp902.CMD_SET_ALARM
+.. autodata:: tp902.CMD_GET_ALARM
+.. autodata:: tp902.CMD_GET_STATUS
+.. autodata:: tp902.CMD_SNOOZE_ALARM
+.. autodata:: tp902.CMD_TIME_SYNC
+.. autodata:: tp902.CMD_GET_FW
+
+RX Command Codes
+~~~~~~~~~~~~~~~~
+
+.. autodata:: tp902.RX_TEMP_BROADCAST
+.. autodata:: tp902.RX_TEMP_ACTUAL
+.. autodata:: tp902.RX_STATUS
+.. autodata:: tp902.RX_ALARM
+.. autodata:: tp902.RX_FW_VERSION
+.. autodata:: tp902.RX_AUTH
+.. autodata:: tp902.RX_ERROR
+
+Value Constants
+~~~~~~~~~~~~~~~
+
+.. autodata:: tp902.UNITS_C
+.. autodata:: tp902.UNITS_F
+.. autodata:: tp902.SOUND_ON
+.. autodata:: tp902.SOUND_OFF
+.. autodata:: tp902.ALARM_OFF
+.. autodata:: tp902.ALARM_TARGET
+.. autodata:: tp902.ALARM_RANGE
+
+Authentication
+~~~~~~~~~~~~~~
+
+.. autodata:: tp902.AUTH_PACKET
+
+Time
+~~~~
+
+.. autodata:: tp902.EPOCH_2020
