@@ -34,12 +34,13 @@ Write (TX)
 ~~~~~~~~~~
 
 - `0x01` auth handshake (randomized payload).
+- `0x02` backlight on (no data).
 - `0x20` set units (`0x0c`=C, `0x0f`=F).
 - `0x21` sound alarm enable (`0x0c`=ON, `0x0f`=OFF).
 - `0x23` set alarm (ch, mode, BCD temps).
-- `0x24` read alarm for channel (`ch+1`).
+- `0x24` read alarm for channel.
 - `0x26` get status (no data).
-- `0x27` request (no data; effect unclear, not used in APK).
+- `0x27` snooze alarm (no data).
 - `0x28` time sync (epoch seconds since 2020-01-01).
 - `0x41` read fw version.
 
@@ -63,9 +64,7 @@ Unknown commands (respond with data)
 
 These return data but are not parsed in app code.
 
-- `0x02` `len=0` (ack/keepalive).
 - `0x03` `len=1` `data=00` (status/flags).
-- `0x27` `len=0` (ack).
 - `0x29` `len=9` (all zeros observed).
 - `0x42` `len=1` (value `0x02` observed).
 - `0x26` `len=5` data present (parsed only as units/flags/battery above).

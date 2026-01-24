@@ -141,7 +141,6 @@ Source: Implementation.
 Unknown (responds with data)
 ----------------------------
 
-- `0x02` `LEN=0` (ack/keepalive?), source: Observed.
 - `0x03` `LEN=1` `DATA[0]=0x00`, source: Observed.
 - `0x29` `LEN=9` (all zeros observed), source: Observed.
 - `0x42` `LEN=1` (value `0x02` observed), source: Observed.
