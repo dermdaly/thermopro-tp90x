@@ -315,7 +315,6 @@ class TP902:
         """
         self._transport = transport
         self._on_temperature = on_temperature
-        self._pending = []  # [(cmd, parsed_obj), ...]
 
     # --- Public API: request-response ---
 
@@ -418,7 +417,7 @@ class TP902:
         """Process one incoming notification.
 
         Call in a loop for continuous operation. Routes broadcasts to
-        callbacks and buffers request-response packets.
+        callbacks and returns response packets.
 
         :param timeout_ms: max wait time for notification
         :returns: (cmd, parsed_obj) tuple or None if timeout
@@ -436,13 +435,6 @@ class TP902:
 
     def _wait_response(self, expected_cmd, timeout_ms):
         """Wait for specific response cmd. Routes other packets while waiting."""
-        # Check pending buffer first
-        for i in range(len(self._pending)):
-            cmd, obj = self._pending[i]
-            if cmd == expected_cmd:
-                del self._pending[i]
-                return obj
-        # Wait for new packets
         deadline = ticks_add(ticks_ms(), timeout_ms)
         while True:
             remaining = ticks_diff(deadline, ticks_ms())
@@ -464,8 +456,7 @@ class TP902:
         if cmd == RX_TEMP_BROADCAST:
             if self._on_temperature:
                 self._on_temperature(parsed)
-        else:
-            self._pending.append((cmd, parsed))
+
         return (cmd, parsed)
 
     def _parse_packet(self, cmd, data):
