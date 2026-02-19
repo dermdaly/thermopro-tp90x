@@ -1,86 +1,40 @@
-# TP902 Usage Examples
+# TP90x Usage Examples
 
-This directory contains example scripts demonstrating how to use the ThermoPro TP902 library.
+This directory contains runnable examples for the ThermoPro TP90x package.
 
-## Bleak Example (Linux/macOS/Windows)
-
-The `bleak_example.py` script shows how to communicate with a TP902 device using the [bleak](https://bleak.readthedocs.io/) BLE library, which works across multiple platforms.
-
-### Installation
+## Install
 
 ```bash
-pip install bleak thermopro-tp902
+pip install "thermopro-tp90x[bleak]"
 ```
 
-### Running the Example
+## Example Scripts
 
-First, find your TP902 device's BLE address using your OS tools:
+- `bleak_example.py`: TP902 example (search/connect by BLE address)
+- `tp904_example.py`: TP904 example (search/connect by advertised name)
+- `interactive_example.py`: interactive menu for TP902/TP904 with command actions
 
-**Linux (bluetoothctl):**
-```bash
-bluetoothctl
-> scan on
-# Look for your TP902 device (e.g., "TP902-XXXX")
-> scan off
-```
+## Running
 
-**macOS (system-profiler):**
-```bash
-system_profiler SPBluetoothDataType
-```
-
-**Windows (Settings):**
-Open Settings → Devices → Bluetooth & devices → to see paired devices.
-
-Then run the example:
+TP902 by address:
 
 ```bash
-python bleak_example.py <BLE_ADDRESS>
+python examples/bleak_example.py AA:BB:CC:DD:EE:FF
 ```
 
-Example:
+TP904 by name:
+
 ```bash
-python bleak_example.py AA:BB:CC:DD:EE:FF
+python examples/tp904_example.py TP904-XXXX
 ```
 
-### What the Example Does
+Interactive menu:
 
-The example performs the following steps:
-
-1. **Scans** for the device by BLE address
-2. **Connects** to the device (up to 20 seconds)
-3. **Authenticates** with the device
-4. **Reads firmware version** from device
-5. **Reads alarm configuration** for channel 1
-6. **Reads device status** (battery, channels, etc.)
-7. **Listens** for temperature broadcasts continuously
-
-Temperature updates are printed as they arrive. Press `Ctrl+C` to stop.
-
-## Transport Implementation
-
-The example includes a `BleakTransport` class that bridges between bleak's async API and the synchronous TP902 API.
-
-### Design Details
-
-- **`send(data: bytes)`** - Sends data to the device via a GATT write characteristic. Runs in the asyncio event loop via `run_coroutine_threadsafe()`.
-- **`receive(timeout_ms: int)`** - Receives data from a queue populated by BLE notifications. Blocks until data arrives or timeout.
-- **`on_notify(handle, data)`** - Called by bleak when notifications arrive. Queues the data for `receive()`.
-- **Threading model** - The TP902 session runs in a daemon thread while the asyncio event loop runs in the main thread. This allows the synchronous TP902 API to work alongside bleak's async API.
-
-### Using BleakTransport in Your Code
-
-```python
-from bleak import BleakClient
-from tp902 import TP902, SERVICE_UUID, WRITE_UUID, NOTIFY_UUID
-from examples.bleak_example import BleakTransport
-
-async with BleakClient(device) as client:
-    transport = BleakTransport(client, asyncio.get_running_loop())
-    await client.start_notify(NOTIFY_UUID, transport.on_notify)
-
-    # Run TP902 in a thread
-    tp = TP902(transport)
-    auth = tp.authenticate()
-    # ... use tp902 API
+```bash
+python examples/interactive_example.py
 ```
+
+## Notes
+
+- The examples use the high-level `connect()` API; users do not need to manage BLE UUIDs or transport internals.
+- Model-specific behavior differences should be documented in `PROTOCOL.md` and `REGISTERS.md` as they are confirmed.

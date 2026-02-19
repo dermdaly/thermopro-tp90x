@@ -1,7 +1,13 @@
-TP902 registry/frames
+TP90x registry/frames
 =====================
 
 **Note:** Frame specifications from device behavior (Observed) and APK decompilation (Implementation).
+
+Model-specific notes
+--------------------
+
+This document currently captures shared TP90x frame/register behavior.
+Add TP902/TP904 differences in dedicated subsections as they are confirmed.
 
 Packet format
 -------------

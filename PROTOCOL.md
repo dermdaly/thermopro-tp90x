@@ -1,7 +1,13 @@
-TP902 BLE protocol notes
-=========================
+TP90x BLE protocol notes
+========================
 
 **Note:** Protocol details from device behavior (Observed) and APK decompilation (Implementation).
+
+Model-specific notes
+--------------------
+
+This document describes the shared TP90x protocol baseline.
+Model-specific deltas (TP902 vs TP904) should be added here as they are validated.
 
 Packet format
 -------------

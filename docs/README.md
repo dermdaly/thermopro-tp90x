@@ -1,6 +1,6 @@
-# Sphinx Documentation for ThermoPro TP902
+# Sphinx Documentation for ThermoPro TP90x
 
-This directory contains Sphinx documentation for the ThermoPro TP902 library.
+This directory contains Sphinx documentation for the ThermoPro TP90x library.
 
 ## Building Documentation Locally
 
