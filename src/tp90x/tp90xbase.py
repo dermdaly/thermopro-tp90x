@@ -328,19 +328,15 @@ class TP90xBase(ABC):
         """Connect using bleak by BLE address or advertised name."""
         from bleak import BleakScanner
 
-        if isinstance(by, SearchMode):
-            by_value = by.value
-        elif isinstance(by, str):
-            by_value = by.strip().lower()
-        else:
-            raise TypeError("by must be SearchMode or str")
+        if not isinstance(by, SearchMode):
+            raise TypeError("by must be a SearchMode enum value")
 
-        if by_value == SearchMode.ADDRESS.value:
+        if by is SearchMode.ADDRESS:
             finder = BleakScanner.find_device_by_address
-        elif by_value == SearchMode.NAME.value:
+        elif by is SearchMode.NAME:
             finder = BleakScanner.find_device_by_name
         else:
-            raise ValueError("by must be 'address' or 'name'")
+            raise ValueError("unsupported SearchMode value: %r" % (by,))
 
         return cls._connect_with_bleak(
             finder,
