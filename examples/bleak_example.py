@@ -12,9 +12,7 @@ import queue
 import sys
 import os
 import threading
-import tp90x.tp902
-from tp90x.tp90xbase import TP90xTransport
-from tp90x import TP902, TemperatureBroadcast
+from tp90x import TP902, TP90xTransport, TemperatureBroadcast
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bleak import BleakClient, BleakScanner
@@ -35,7 +33,7 @@ class BleakTransport(TP90xTransport):
 
     def send(self, data: bytes) -> None:
         fut = asyncio.run_coroutine_threadsafe(
-            self._client.write_gatt_char(WRITE_UUID, data, response=True),
+            self._client.write_gatt_char(TP902.WRITE_UUID, data, response=True),
             self._loop,
         )
         fut.result(timeout=10.0)
@@ -114,11 +112,11 @@ async def main() -> int:
 
     loop = asyncio.get_running_loop()
 
-    async with BleakClient(device, timeout=20.0, services=[SERVICE_UUID]) as client:
+    async with BleakClient(device, timeout=20.0, services=[TP902.SERVICE_UUID]) as client:
         print("Connected: %s (%s)" % (device.address, device.name))
 
         transport = BleakTransport(client, loop)
-        await client.start_notify(NOTIFY_UUID, transport.on_notify)
+        await client.start_notify(TP902.NOTIFY_UUID, transport.on_notify)
 
         # Run TP902 in daemon thread
         def run_thread():
@@ -138,7 +136,7 @@ async def main() -> int:
             thread.join(timeout=1.0)
         finally:
             try:
-                await client.stop_notify(NOTIFY_UUID)
+                await client.stop_notify(TP902.NOTIFY_UUID)
             except Exception:
                 pass
 

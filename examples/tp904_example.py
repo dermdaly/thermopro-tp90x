@@ -12,10 +12,8 @@ import queue
 import sys
 import os
 import threading
-import tp90x
 
-from tp90x.tp90xbase import TP90xTransport
-from tp90x import TP904, TemperatureBroadcast
+from tp90x import TP904, TP90xTransport, TemperatureBroadcast
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bleak import BleakClient, BleakScanner
@@ -138,7 +136,7 @@ async def main() -> int:
             thread.join(timeout=1.0)
         finally:
             try:
-                await client.stop_notify(NOTIFY_UUID)
+                await client.stop_notify(TP904.NOTIFY_UUID)
             except Exception:
                 pass
 
