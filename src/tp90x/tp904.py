@@ -7,5 +7,3 @@ class TP904(TP90xBase):
     @classmethod
     def model_name(cls):
         return "TP904"
-
-    

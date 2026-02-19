@@ -315,6 +315,136 @@ class TP90xBase(ABC):
     def model_name(cls):
         """Return model identifier for concrete subclasses."""
 
+    @classmethod
+    def connect(
+        cls,
+        identifier,
+        *,
+        by="address",
+        scan_timeout=10.0,
+        connect_timeout=20.0,
+        on_temperature=None,
+    ):
+        """Connect using bleak by BLE address or advertised name."""
+        from bleak import BleakScanner
+
+        if by == "address":
+            finder = BleakScanner.find_device_by_address
+        elif by == "name":
+            finder = BleakScanner.find_device_by_name
+        else:
+            raise ValueError("by must be 'address' or 'name'")
+
+        return cls._connect_with_bleak(
+            finder,
+            identifier,
+            scan_timeout=scan_timeout,
+            connect_timeout=connect_timeout,
+            on_temperature=on_temperature,
+        )
+
+    @classmethod
+    def _connect_with_bleak(
+        cls,
+        finder,
+        identifier,
+        *,
+        scan_timeout=10.0,
+        connect_timeout=20.0,
+        on_temperature=None,
+    ):
+        """Create a connected instance using bleak with an internal loop thread.
+
+        `finder` must be an async callable compatible with BleakScanner
+        finder APIs (identifier, timeout=...).
+        """
+        import asyncio
+        import queue
+        import threading
+
+        try:
+            from bleak import BleakClient
+        except ImportError as exc:
+            raise ImportError(
+                "bleak is required for connect(); install with: pip install bleak"
+            ) from exc
+
+        class _LoopThread:
+            def __init__(self):
+                self._ready = threading.Event()
+                self._loop = None
+                self._thread = threading.Thread(target=self._run, daemon=True)
+                self._thread.start()
+                self._ready.wait()
+
+            def _run(self):
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
+                self._ready.set()
+                self._loop.run_forever()
+                self._loop.close()
+
+            def call(self, coro, timeout=None):
+                fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
+                return fut.result(timeout=timeout)
+
+            def stop(self):
+                if self._loop is not None:
+                    self._loop.call_soon_threadsafe(self._loop.stop)
+                self._thread.join(timeout=2.0)
+
+        class _BleakTransport(TP90xTransport):
+            def __init__(self, bleak_client, loop_thread):
+                self._client = bleak_client
+                self._loop_thread = loop_thread
+                self._queue = queue.Queue()
+
+            def send(self, data):
+                fut = asyncio.run_coroutine_threadsafe(
+                    self._client.write_gatt_char(cls.WRITE_UUID, data, response=True),
+                    self._loop_thread._loop,
+                )
+                fut.result(timeout=10.0)
+
+            def receive(self, timeout_ms):
+                try:
+                    return self._queue.get(timeout=timeout_ms / 1000.0)
+                except queue.Empty:
+                    return None
+
+            def on_notify(self, _handle, data):
+                self._queue.put(bytes(data))
+
+        loop_thread = _LoopThread()
+        client = None
+        try:
+            device = loop_thread.call(
+                finder(identifier, timeout=scan_timeout),
+                timeout=scan_timeout + 5.0,
+            )
+            if device is None:
+                raise TimeoutError("BLE device not found: %s" % identifier)
+
+            client = BleakClient(device, timeout=connect_timeout, services=[cls.SERVICE_UUID])
+            loop_thread.call(client.connect(), timeout=connect_timeout + 5.0)
+
+            transport = _BleakTransport(client, loop_thread)
+            loop_thread.call(client.start_notify(cls.NOTIFY_UUID, transport.on_notify), timeout=10.0)
+
+            instance = cls(transport, on_temperature=on_temperature)
+            instance._bleak_client = client
+            instance._bleak_notify_uuid = cls.NOTIFY_UUID
+            instance._bleak_loop_thread = loop_thread
+            return instance
+        except Exception:
+            if client is not None:
+                try:
+                    loop_thread.call(client.disconnect(), timeout=5.0)
+                except Exception:
+                    pass
+            loop_thread.stop()
+            raise
+
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if "NUM_PROBES" not in cls.__dict__:
@@ -329,6 +459,35 @@ class TP90xBase(ABC):
         """
         self._transport = transport
         self._on_temperature = on_temperature
+        self._bleak_client = None
+        self._bleak_notify_uuid = None
+        self._bleak_loop_thread = None
+
+    def disconnect(self):
+        """Disconnect built-in bleak transport session if present."""
+        if self._bleak_client is None:
+            return
+        try:
+            if self._bleak_notify_uuid is not None:
+                self._bleak_loop_thread.call(
+                    self._bleak_client.stop_notify(self._bleak_notify_uuid),
+                    timeout=5.0,
+                )
+        except Exception:
+            pass
+        try:
+            self._bleak_loop_thread.call(self._bleak_client.disconnect(), timeout=10.0)
+        finally:
+            self._bleak_loop_thread.stop()
+        self._bleak_client = None
+        self._bleak_notify_uuid = None
+        self._bleak_loop_thread = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.disconnect()
 
     # --- Public API: request-response ---
 
