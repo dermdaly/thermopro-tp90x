@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""TP902 example using bleak BLE library (Linux/macOS/Windows).
+"""TP904 example using bleak BLE library (Linux/macOS/Windows).
 
 Usage:
-    python bleak_example.py <BLE_ADDRESS>
+    python tp904_example.py <BLE_ADDRESS>
 """
 from __future__ import annotations
 
@@ -12,16 +12,16 @@ import queue
 import sys
 import os
 import threading
-import tp90x.tp902
+import tp90x
+
 from tp90x.tp90xbase import TP90xTransport
-from tp90x import TP902, TemperatureBroadcast
+from tp90x import TP904, TemperatureBroadcast
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bleak import BleakClient, BleakScanner
 
-
 class BleakTransport(TP90xTransport):
-    """TP902 transport over bleak BLE client.
+    """TP904 transport over bleak BLE client.
 
     Designed to be used from a thread (via run_in_executor) while
     the asyncio event loop runs in the main thread.
@@ -35,7 +35,7 @@ class BleakTransport(TP90xTransport):
 
     def send(self, data: bytes) -> None:
         fut = asyncio.run_coroutine_threadsafe(
-            self._client.write_gatt_char(WRITE_UUID, data, response=True),
+            self._client.write_gatt_char(TP904.WRITE_UUID, data, response=True),
             self._loop,
         )
         fut.result(timeout=10.0)
@@ -64,9 +64,9 @@ def on_temperature(broadcast: TemperatureBroadcast) -> None:
     print(broadcast)
 
 
-def run_tp902(transport: BleakTransport) -> None:
-    """Blocking TP902 session. Runs in a thread."""
-    tp = TP902(transport, on_temperature=on_temperature)
+def run_tp904(transport: BleakTransport) -> None:
+    """Blocking tp904 session. Runs in a thread."""
+    tp = TP904(transport, on_temperature=on_temperature)
 
     # Authenticate
     auth = tp.authenticate()
@@ -98,15 +98,15 @@ def run_tp902(transport: BleakTransport) -> None:
 
 
 async def main() -> int:
-    parser = argparse.ArgumentParser(description="TP902 bleak example")
-    parser.add_argument("address", help="BLE address of TP902 device")
+    parser = argparse.ArgumentParser(description="tp904 bleak example")
+    parser.add_argument("name", help="Advertised name of tp904 device")
     parser.add_argument("--timeout", type=float, default=10.0,
                         help="Scan timeout (seconds)")
     args = parser.parse_args()
 
-    print("Scanning for %s..." % args.address)
-    device = await BleakScanner.find_device_by_address(
-        args.address, timeout=args.timeout
+    print("Scanning for %s..." % args.name)
+    device = await BleakScanner.find_device_by_name(
+        args.name, timeout=args.timeout
     )
     if not device:
         print("Device not found.")
@@ -114,15 +114,15 @@ async def main() -> int:
 
     loop = asyncio.get_running_loop()
 
-    async with BleakClient(device, timeout=20.0, services=[SERVICE_UUID]) as client:
+    async with BleakClient(device, timeout=20.0, services=[TP904.SERVICE_UUID]) as client:
         print("Connected: %s (%s)" % (device.address, device.name))
 
         transport = BleakTransport(client, loop)
-        await client.start_notify(NOTIFY_UUID, transport.on_notify)
+        await client.start_notify(TP904.NOTIFY_UUID, transport.on_notify)
 
-        # Run TP902 in daemon thread
+        # Run tp904 in daemon thread
         def run_thread():
-            run_tp902(transport)
+            run_tp904(transport)
 
         thread = threading.Thread(target=run_thread, daemon=True)
         thread.start()

@@ -1,9 +1,12 @@
-"""TP902 BLE thermometer protocol library.
+"""TP90x BLE thermometer protocol library.
 
-Single-file library with transport abstraction. No external dependencies.
+Library with transport abstraction. No external dependencies.
 Compatible with CPython and MicroPython.
+Forked from petrkr/thermopro-tp902:master
 """
 from __future__ import annotations
+from abc import ABC, abstractmethod
+from .enums import AlarmMode
 
 try:
     from time import ticks_ms, ticks_diff, ticks_add  # type: ignore
@@ -19,60 +22,7 @@ except ImportError:
     def ticks_add(a, b):
         return a + b
 
-
-# --- BLE UUIDs ---
-
-SERVICE_UUID = "1086fff0-3343-4817-8bb2-b32206336ce8"
-WRITE_UUID = "1086fff1-3343-4817-8bb2-b32206336ce8"
-NOTIFY_UUID = "1086fff2-3343-4817-8bb2-b32206336ce8"
-
-# --- TX command codes ---
-
-CMD_AUTH = 0x01
-CMD_BACKLIGHT_ON = 0x02
-CMD_SET_UNITS = 0x20
-CMD_SET_SOUND = 0x21
-CMD_SET_ALARM = 0x23
-CMD_GET_ALARM = 0x24
-CMD_GET_STATUS = 0x26
-CMD_SNOOZE_ALARM = 0x27
-CMD_TIME_SYNC = 0x28
-CMD_GET_FW = 0x41
-
-# --- RX command codes ---
-
-RX_TEMP_BROADCAST = 0x30
-RX_TEMP_ACTUAL = 0x25
-RX_STATUS = 0x26
-RX_ALARM = 0x24
-RX_FW_VERSION = 0x41
-RX_AUTH = 0x01
-RX_ERROR = 0xE0
-
-# --- Value constants ---
-
-UNITS_C = 0x0C
-UNITS_F = 0x0F
-SOUND_ON = 0x0C
-SOUND_OFF = 0x0F
-ALARM_OFF = 0x00
-ALARM_TARGET = 0x0A
-ALARM_RANGE = 0x82
-
-# --- Auth ---
-# Fixed auth packet (deterministic, seed=254, 6 lookup tables A-F × 16 entries).
-# The auth mechanism uses 3 random int32s, indexes into tables by nibble,
-# and swaps pairs based on LSB. For random auth (replay attack resistance),
-AUTH_PACKET = b'\x01\x09\x99\xa8\x89\x3c\x66\x81\x75\x0d\xe3\x5c'
-
-# --- Epoch offset (2020-01-01 00:00:00 UTC) ---
-
-EPOCH_2020 = 1577836800
-
-
 # --- Data classes ---
-
-
 class Temperature:
     """Single probe temperature reading."""
     __slots__ = ('channel', 'value')
@@ -95,7 +45,7 @@ class TemperatureBroadcast:
         self.battery = battery            # int 0-100
         self.units = units                # 'C' or 'F'
         self.alarms = alarms              # int (bitmask)
-        self.temperatures = temperatures  # list of Temperature (6 items)
+        self.temperatures = temperatures  # list of Temperature (based on number of probes)
 
     def __repr__(self):
         temps = ' '.join(repr(t) for t in self.temperatures)
@@ -129,11 +79,11 @@ class AlarmConfig:
         self.value2 = value2    # float or None
 
     def __repr__(self):
-        if self.mode == ALARM_OFF:
+        if self.mode == TP90xBase.ALARM_OFF:
             return "Alarm(ch%d OFF)" % self.channel
-        if self.mode == ALARM_TARGET:
+        if self.mode == TP90xBase.ALARM_TARGET:
             return "Alarm(ch%d TARGET=%.1f)" % (self.channel, self.value1 or 0)
-        if self.mode == ALARM_RANGE:
+        if self.mode == TP90xBase.ALARM_RANGE:
             return "Alarm(ch%d RANGE=%.1f-%.1f)" % (
                 self.channel, self.value2 or 0, self.value1 or 0)
         return "Alarm(ch%d mode=0x%02x)" % (self.channel, self.mode)
@@ -229,7 +179,7 @@ def encode_temp_bcd(value):
 
 
 def build_packet(cmd, payload=b''):
-    """Build TP902 packet frame: CMD LEN DATA CHECKSUM.
+    """Build TP90x packet frame: CMD LEN DATA CHECKSUM.
 
     :param cmd: command byte
     :param payload: data bytes
@@ -259,9 +209,9 @@ def verify_checksum(data):
 
 def _parse_units(raw_byte):
     """Parse units byte to string."""
-    if raw_byte == UNITS_C:
+    if raw_byte == TP90xBase.UNITS_C:
         return 'C'
-    if raw_byte == UNITS_F:
+    if raw_byte == TP90xBase.UNITS_F:
         return 'F'
     return '0x%02x' % raw_byte
 
@@ -269,8 +219,8 @@ def _parse_units(raw_byte):
 # --- Transport abstraction ---
 
 
-class TP902Transport:
-    """Abstract BLE transport for TP902.
+class TP90xTransport:
+    """Abstract BLE transport for TP90xBase.
 
     Subclass and implement send() and receive() for your platform.
     """
@@ -295,13 +245,64 @@ class TP902Transport:
 # --- Main protocol class ---
 
 
-class TP902:
-    """TP902 thermometer protocol handler.
+class TP90xBase(ABC):
+    # --- BLE UUIDs ---
+    SERVICE_UUID = "1086fff0-3343-4817-8bb2-b32206336ce8"
+    WRITE_UUID = "1086fff1-3343-4817-8bb2-b32206336ce8"
+    NOTIFY_UUID = "1086fff2-3343-4817-8bb2-b32206336ce8"
+
+    # --- TX command codes ---
+
+    CMD_AUTH = 0x01
+    CMD_BACKLIGHT_ON = 0x02
+    CMD_SET_UNITS = 0x20
+    CMD_SET_SOUND = 0x21
+    CMD_SET_ALARM = 0x23
+    CMD_GET_ALARM = 0x24
+    CMD_GET_STATUS = 0x26
+    CMD_SNOOZE_ALARM = 0x27
+    CMD_TIME_SYNC = 0x28
+    CMD_GET_FW = 0x41
+
+    # --- RX command codes ---
+
+    RX_TEMP_BROADCAST = 0x30
+    RX_TEMP_ACTUAL = 0x25
+    RX_STATUS = 0x26
+    RX_ALARM = 0x24
+    RX_FW_VERSION = 0x41
+    RX_AUTH = 0x01
+    RX_ERROR = 0xE0
+
+    # --- Value constants ---
+
+    UNITS_C = 0x0C
+    UNITS_F = 0x0F
+    SOUND_ON = 0x0C
+    SOUND_OFF = 0x0F
+    ALARM_OFF = 0x00
+    ALARM_TARGET = 0x0A
+    ALARM_RANGE = 0x82
+    NUM_PROBES: int
+
+    # --- Auth ---
+    # Fixed auth packet (deterministic, seed=254, 6 lookup tables A-F × 16 entries).
+    # The auth mechanism uses 3 random int32s, indexes into tables by nibble,
+    # and swaps pairs based on LSB. For random auth (replay attack resistance),
+    AUTH_PACKET = b'\x01\x09\x99\xa8\x89\x3c\x66\x81\x75\x0d\xe3\x5c'
+
+    # --- Epoch offset (2020-01-01 00:00:00 UTC) ---
+
+    EPOCH_2020 = 1577836800
+
+
+
+    """TP90xBase thermometer protocol handler.
 
     Usage::
 
         transport = MyBLETransport(...)
-        tp = TP902(transport, on_temperature=my_callback)
+        tp = MyTP90xModel(transport, on_temperature=my_callback)
         tp.authenticate()
         tp.sync_time()
         # continuous operation:
@@ -309,9 +310,21 @@ class TP902:
             tp.process()
     """
 
+    @classmethod
+    @abstractmethod
+    def model_name(cls):
+        """Return model identifier for concrete subclasses."""
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if "NUM_PROBES" not in cls.__dict__:
+            raise TypeError("%s must define class variable NUM_PROBES" % cls.__name__)
+        if not isinstance(cls.NUM_PROBES, int) or cls.NUM_PROBES <= 0:
+            raise TypeError("%s.NUM_PROBES must be a positive int" % cls.__name__)
+
     def __init__(self, transport, on_temperature=None):
         """
-        :param transport: TP902Transport instance
+        :param transport: TP90xTransport instance
         :param on_temperature: callback(TemperatureBroadcast) for 0x30 broadcasts
         """
         self._transport = transport
@@ -325,22 +338,22 @@ class TP902:
         :param timeout_ms: response timeout
         :returns: AuthResponse or None on timeout
         """
-        self._transport.send(AUTH_PACKET)
-        return self._wait_response(RX_AUTH, timeout_ms)
+        self._transport.send(self.AUTH_PACKET)
+        return self._wait_response(self.RX_AUTH, timeout_ms)
 
     def backlight_on(self):
         """Lights up LCD same as button push
 
         """
-        self._send(CMD_BACKLIGHT_ON)
+        self._send(self.CMD_BACKLIGHT_ON)
 
     def get_firmware_version(self, timeout_ms=5000):
         """Request firmware version.
 
         :returns: FirmwareVersion or None on timeout
         """
-        self._send(CMD_GET_FW)
-        return self._wait_response(RX_FW_VERSION, timeout_ms)
+        self._send(self.CMD_GET_FW)
+        return self._wait_response(self.RX_FW_VERSION, timeout_ms)
 
     def get_alarm(self, channel, timeout_ms=5000):
         """Request alarm config for channel.
@@ -348,39 +361,39 @@ class TP902:
         :param channel: 1-6
         :returns: AlarmConfig or None on timeout
         """
-        self._send(CMD_GET_ALARM, bytes([channel]))
-        return self._wait_response(RX_ALARM, timeout_ms)
+        self._send(self.CMD_GET_ALARM, bytes([channel]))
+        return self._wait_response(self.RX_ALARM, timeout_ms)
 
     def get_status(self, timeout_ms=5000):
         """Request device status (units, flags, battery).
 
         :returns: DeviceStatus or None on timeout
         """
-        self._send(CMD_GET_STATUS)
-        return self._wait_response(RX_STATUS, timeout_ms)
+        self._send(self.CMD_GET_STATUS)
+        return self._wait_response(self.RX_STATUS, timeout_ms)
 
     # --- Public API: fire-and-forget ---
 
     def snooze_alarm(self):
         """Snoze beeping alarm until next trigger
         """
-        self._send(CMD_SNOOZE_ALARM)
+        self._send(self.CMD_SNOOZE_ALARM)
 
     def set_units(self, celsius=True):
         """Set display units.
 
         :param celsius: True for °C, False for °F
         """
-        self._send(CMD_SET_UNITS, bytes([UNITS_C if celsius else UNITS_F]))
+        self._send(self.CMD_SET_UNITS, bytes([self.UNITS_C if celsius else self.UNITS_F]))
 
     def set_sound_alarm(self, enabled=True):
         """Enable/disable audible alarm.
 
         :param enabled: True to enable
         """
-        self._send(CMD_SET_SOUND, bytes([SOUND_ON if enabled else SOUND_OFF]))
+        self._send(self.CMD_SET_SOUND, bytes([self.SOUND_ON if enabled else self.SOUND_OFF]))
 
-    def set_alarm(self, channel, mode=ALARM_OFF, value1=None, value2=None):
+    def set_alarm(self, channel, mode=AlarmMode.Off, value1=None, value2=None):
         """Set alarm for channel.
 
         :param channel: 1-6
@@ -388,19 +401,23 @@ class TP902:
         :param value1: target temp (TARGET) or high temp (RANGE)
         :param value2: low temp (RANGE only)
         """
-        if mode == ALARM_OFF:
+        if mode == AlarmMode.Off:
             t1 = b'\xff\xff'
             t2 = b'\xff\xff'
-        elif mode == ALARM_TARGET:
+            encodedMode = self.ALARM_OFF
+        elif mode == AlarmMode.Target:
             t1 = encode_temp_bcd(value1)
             t2 = b'\x00\x00'
-        elif mode == ALARM_RANGE:
+            encodedMode = self.ALARM_TARGET
+        elif mode == AlarmMode.Range:
             t1 = encode_temp_bcd(value1)
             t2 = encode_temp_bcd(value2)
+            encodedMode = self.ALARM_RANGE
         else:
             t1 = b'\xff\xff'
             t2 = b'\xff\xff'
-        self._send(CMD_SET_ALARM, bytes([channel, mode]) + t1 + t2)
+            encodedMode = self.ALARM_OFF
+        self._send(self.CMD_SET_ALARM, bytes([channel, encodedMode]) + t1 + t2)
 
     def sync_time(self, epoch_2020=None):
         """Sync device time.
@@ -410,11 +427,11 @@ class TP902:
         if epoch_2020 is None:
             try:
                 from time import time
-                epoch_2020 = int(time()) - EPOCH_2020
+                epoch_2020 = int(time()) - self.EPOCH_2020
             except Exception:
                 epoch_2020 = 0
         data = epoch_2020.to_bytes(4, 'little')
-        self._send(CMD_TIME_SYNC, data)
+        self._send(self.CMD_TIME_SYNC, data)
 
     # --- Polling ---
 
@@ -458,7 +475,7 @@ class TP902:
             return (0, None)
         cmd = raw[0]
         parsed = self._parse_packet(cmd, raw)
-        if cmd == RX_TEMP_BROADCAST:
+        if cmd == self.RX_TEMP_BROADCAST:
             if self._on_temperature:
                 self._on_temperature(parsed)
 
@@ -468,35 +485,38 @@ class TP902:
         """Parse raw packet into appropriate data class."""
         pkt_len = data[1]
 
-        if cmd == RX_TEMP_BROADCAST and len(data) >= 17:
+        broadcast_pkt_len = 3 + self.NUM_PROBES * 2
+        actual_pkt_len = 2 + self.NUM_PROBES * 2
+
+        if cmd == self.RX_TEMP_BROADCAST and pkt_len == broadcast_pkt_len and len(data) >= 2 + pkt_len:
             battery = data[2]
             units = _parse_units(data[3])
             alarms = data[4]
             temps = []
-            for i in range(6):
+            for i in range(self.NUM_PROBES):
                 offset = 5 + i * 2
                 val = decode_temp_bcd(data[offset:offset + 2])
                 temps.append(Temperature(i + 1, val))
             return TemperatureBroadcast(battery, units, alarms, temps)
 
-        if cmd == RX_TEMP_ACTUAL and pkt_len == 0x0E and len(data) >= 16:
+        if cmd == self.RX_TEMP_ACTUAL and pkt_len == actual_pkt_len and len(data) >= 2 + pkt_len:
             probe_count = data[2]
             alarms = data[3]
             temps = []
-            for i in range(6):
+            for i in range(self.NUM_PROBES):
                 offset = 4 + i * 2
                 val = decode_temp_bcd(data[offset:offset + 2])
                 temps.append(Temperature(i + 1, val))
             return TemperatureActual(probe_count, alarms, temps)
 
-        if cmd == RX_ALARM and pkt_len == 0x06 and len(data) >= 8:
+        if cmd == self.RX_ALARM and pkt_len == 0x06 and len(data) >= 8:
             channel = data[2]
             mode = data[3]
             val1 = decode_temp_bcd(data[4:6])
             val2 = decode_temp_bcd(data[6:8])
             return AlarmConfig(channel, mode, val1, val2)
 
-        if cmd == RX_FW_VERSION and pkt_len == 0x03 and len(data) >= 5:
+        if cmd == self.RX_FW_VERSION and pkt_len == 0x03 and len(data) >= 5:
             v = data[2:5]
             major = v[0] >> 4
             minor = v[0] & 0x0F
@@ -504,13 +524,13 @@ class TP902:
             build = v[2]
             return FirmwareVersion(major, minor, patch, build)
 
-        if cmd == RX_STATUS and pkt_len == 0x05 and len(data) >= 7:
+        if cmd == self.RX_STATUS and pkt_len == 0x05 and len(data) >= 7:
             units = _parse_units(data[2])
             beeper = data[3] == 0x0C  # 0x0c=ON, 0x0f=OFF
             battery = data[4]
             return DeviceStatus(units, beeper, battery)
 
-        if cmd == RX_AUTH and pkt_len == 0x02 and len(data) >= 4:
+        if cmd == self.RX_AUTH and pkt_len == 0x02 and len(data) >= 4:
             return AuthResponse(bytes(data[2:4]))
 
         # Unknown or unparsed - return raw data bytes
