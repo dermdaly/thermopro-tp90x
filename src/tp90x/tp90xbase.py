@@ -470,6 +470,17 @@ class TP90xBase(ABC):
         self._bleak_notify_uuid = None
         self._bleak_loop_thread = None
 
+    def _validate_channel(self, channel):
+        """Validate that a channel/probe index is within model bounds."""
+        if not isinstance(channel, int):
+            raise TypeError("channel must be an int")
+        if channel < 1 or channel > self.NUM_PROBES:
+            raise ValueError(
+                "channel must be between 1 and %d for %s"
+                % (self.NUM_PROBES, self.model_name())
+            )
+        return channel
+
     def disconnect(self):
         """Disconnect built-in bleak transport session if present."""
         if self._bleak_client is None:
@@ -524,9 +535,10 @@ class TP90xBase(ABC):
     def get_alarm(self, channel, timeout_ms=5000):
         """Request alarm config for channel.
 
-        :param channel: 1-6
+        :param channel: 1..NUM_PROBES
         :returns: AlarmConfig or None on timeout
         """
+        channel = self._validate_channel(channel)
         self._send(self.CMD_GET_ALARM, bytes([channel]))
         return self._wait_response(self.RX_ALARM, timeout_ms)
 
@@ -562,11 +574,12 @@ class TP90xBase(ABC):
     def set_alarm(self, channel, mode=AlarmMode.Off, value1=None, value2=None):
         """Set alarm for channel.
 
-        :param channel: 1-6
+        :param channel: 1..NUM_PROBES
         :param mode: ALARM_OFF, ALARM_TARGET, or ALARM_RANGE
         :param value1: target temp (TARGET) or high temp (RANGE)
         :param value2: low temp (RANGE only)
         """
+        channel = self._validate_channel(channel)
         if mode == AlarmMode.Off:
             t1 = b'\xff\xff'
             t2 = b'\xff\xff'
@@ -677,6 +690,8 @@ class TP90xBase(ABC):
 
         if cmd == self.RX_ALARM and pkt_len == 0x06 and len(data) >= 8:
             channel = data[2]
+            if channel < 1 or channel > self.NUM_PROBES:
+                return bytes(data[2:2 + pkt_len])
             mode = data[3]
             val1 = _decode_temp_bcd(data[4:6])
             val2 = _decode_temp_bcd(data[6:8])
