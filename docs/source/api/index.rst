@@ -1,19 +1,18 @@
 API Reference
 =============
 
-Core library for BLE communication with TP902 thermometer.
+Core library for BLE communication with TP90x thermometers.
 
 Overview
 --------
 
-TP902 provides a lightweight Python library for communicating with ThermoPro TP902 wireless thermometer over BLE.
-The library includes:
+This section is generated from module/class docstrings using Sphinx autodoc.
+The primary public API includes:
 
-* **Main Protocol Class** - :class:`~tp902.TP902` for device communication
-* **Transport Layer** - Abstract :class:`~tp902.TP902Transport` base class for BLE implementations
-* **Data Classes** - Structured results (Temperature, AlarmConfig, FirmwareVersion, etc.)
-* **Packet Helpers** - Utilities for temperature encoding, packet building, and checksum verification
-* **Constants** - BLE UUIDs, command codes, and value constants
+* **Model classes** - :class:`~tp90x.TP902` and :class:`~tp90x.TP904`
+* **Enums** - :class:`~tp90x.AlarmMode` and :class:`~tp90x.SearchMode`
+* **Data classes** - structured response objects
+* **Advanced internals** - :class:`~tp90x.tp90xbase.TP90xBase` and :class:`~tp90x.tp90xbase.TP90xTransport`
 
 Quick Reference
 ---------------
@@ -24,8 +23,10 @@ Main Classes
 .. autosummary::
    :nosignatures:
 
-   tp902.TP902
-   tp902.TP902Transport
+   tp90x.TP902
+   tp90x.TP904
+   tp90x.SearchMode
+   tp90x.AlarmMode
 
 Data Classes
 ^^^^^^^^^^^^
@@ -33,24 +34,13 @@ Data Classes
 .. autosummary::
    :nosignatures:
 
-   tp902.Temperature
-   tp902.TemperatureBroadcast
-   tp902.TemperatureActual
-   tp902.AlarmConfig
-   tp902.FirmwareVersion
-   tp902.DeviceStatus
-   tp902.AuthResponse
-
-Packet Helpers
-^^^^^^^^^^^^^^
-
-.. autosummary::
-   :nosignatures:
-
-   tp902.build_packet
-   tp902.verify_checksum
-   tp902.decode_temp_bcd
-   tp902.encode_temp_bcd
+   tp90x.Temperature
+   tp90x.TemperatureBroadcast
+   tp90x.TemperatureActual
+   tp90x.AlarmConfig
+   tp90x.FirmwareVersion
+   tp90x.DeviceStatus
+   tp90x.AuthResponse
 
 Detailed Documentation
 ----------------------

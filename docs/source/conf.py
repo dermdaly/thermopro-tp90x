@@ -5,15 +5,15 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'thermopro-tp902'
+project = 'thermopro-tp90x'
 copyright = '2025, Petr Kracik'
 author = 'Petr Kracik'
-release = '0.0.1'
+release = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -95,8 +95,8 @@ except ImportError:
     html_theme = 'pyramid'  # Better fallback theme - clean and modern
 
 html_static_path = ['_static']
-html_title = 'ThermoPro TP902 Documentation'
-html_short_title = 'TP902'
+html_title = 'ThermoPro TP90x Documentation'
+html_short_title = 'TP90x'
 
 # MyST parser configuration
 myst_enable_extensions = [

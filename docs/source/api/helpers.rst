@@ -1,18 +1,9 @@
-Packet Helpers
-==============
+Internal Helpers
+================
 
-Utility functions for packet building and temperature encoding/decoding.
+Packet helper functions are internal implementation details in
+``tp90x.tp90xbase`` (prefixed with ``_``) and are not part of the stable
+public API.
 
-Temperature Encoding
---------------------
-
-.. autofunction:: tp902.decode_temp_bcd
-
-.. autofunction:: tp902.encode_temp_bcd
-
-Packet Building
----------------
-
-.. autofunction:: tp902.build_packet
-
-.. autofunction:: tp902.verify_checksum
+For external use, prefer the high-level model methods documented in
+``tp90x.TP902`` and ``tp90x.TP904``.

@@ -1,12 +1,12 @@
 Transport Layer
 ===============
 
-Abstract base class for BLE transport implementations.
+Advanced extension points for custom BLE integration.
 
-TP902Transport
+TP90xTransport
 --------------
 
-.. autoclass:: tp902.TP902Transport
+.. autoclass:: tp90x.tp90xbase.TP90xTransport
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,24 +14,21 @@ TP902Transport
 Implementation
 ~~~~~~~~~~~~~~
 
-Subclass and implement :meth:`~tp902.TP902Transport.send` and :meth:`~tp902.TP902Transport.receive` for your platform.
+Subclass and implement :meth:`~tp90x.tp90xbase.TP90xTransport.send` and
+:meth:`~tp90x.tp90xbase.TP90xTransport.receive` for your platform.
 
-Example with bleak:
+Most users should prefer :meth:`tp90x.tp90xbase.TP90xBase.connect` and avoid
+custom transport plumbing.
+
+Example skeleton:
 
 .. code-block:: python
 
-   from bleak import BleakClient
-   from tp902 import TP902, TP902Transport
+   from tp90x.tp90xbase import TP90xTransport
 
-   class BleakTransport(TP902Transport):
-       def __init__(self, client):
-           self.client = client
-           self._notification = None
+   class MyTransport(TP90xTransport):
+       def send(self, data):
+           ...
 
-       async def send(self, data):
-           await self.client.write_gatt_char(TP902.WRITE_UUID, data)
-
-       async def receive(self, timeout_ms):
-           # Implement timeout handling for your platform
-           # Return bytes from notification or None on timeout
-           pass
+       def receive(self, timeout_ms):
+           ...

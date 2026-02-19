@@ -1,7 +1,7 @@
-ThermoPro TP902 Documentation
+ThermoPro TP90x Documentation
 =============================
 
-BLE parser for ThermoPro TP902 wireless thermometer.
+BLE parser for ThermoPro TP90x wireless thermometers.
 
 **Protocol sources:** Device behavior (Observed) and APK decompilation (Implementation).
 
@@ -12,22 +12,18 @@ Installation:
 
 .. code-block:: bash
 
-   pip install thermopro-tp902
+   pip install thermopro-tp90x[bleak]
 
 Basic usage with bleak:
 
 .. code-block:: python
 
-   from bleak import BleakClient
-   from tp902 import TP902, TP902Transport
+   from tp90x import TP902, SearchMode
 
-   class MyTransport(TP902Transport):
-       def __init__(self, client):
-           self.client = client
-       async def send(self, data):
-           await self.client.write_gatt_char(TP902.WRITE_UUID, data)
-       async def recv(self):
-           return await self.client.start_notify(TP902.NOTIFY_UUID, lambda _, data: data)
+   with TP902.connect("AA:BB:CC:DD:EE:FF", by=SearchMode.ADDRESS) as tp:
+       auth = tp.authenticate()
+       status = tp.get_status()
+       print(auth, status)
 
 Documentation
 -------------

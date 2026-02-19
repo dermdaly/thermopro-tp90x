@@ -1,62 +1,31 @@
-Main Protocol Class
-===================
+Main API
+========
 
-.. automodule:: tp902
-   :members: TP902
+.. automodule:: tp90x
+   :members: TP902, TP904, AlarmMode, SearchMode
    :undoc-members:
    :show-inheritance:
 
-BLE Constants
--------------
+Advanced Base Class
+-------------------
 
-Service and Characteristic UUIDs:
+.. autoclass:: tp90x.tp90xbase.TP90xBase
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. autodata:: tp902.SERVICE_UUID
-.. autodata:: tp902.WRITE_UUID
-.. autodata:: tp902.NOTIFY_UUID
+Model Constants (TP902)
+-----------------------
 
-TX Command Codes
-~~~~~~~~~~~~~~~~
+.. autoclass:: tp90x.tp902.TP902
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. autodata:: tp902.CMD_AUTH
-.. autodata:: tp902.CMD_BACKLIGHT_ON
-.. autodata:: tp902.CMD_SET_UNITS
-.. autodata:: tp902.CMD_SET_SOUND
-.. autodata:: tp902.CMD_SET_ALARM
-.. autodata:: tp902.CMD_GET_ALARM
-.. autodata:: tp902.CMD_GET_STATUS
-.. autodata:: tp902.CMD_SNOOZE_ALARM
-.. autodata:: tp902.CMD_TIME_SYNC
-.. autodata:: tp902.CMD_GET_FW
+Model Constants (TP904)
+-----------------------
 
-RX Command Codes
-~~~~~~~~~~~~~~~~
-
-.. autodata:: tp902.RX_TEMP_BROADCAST
-.. autodata:: tp902.RX_TEMP_ACTUAL
-.. autodata:: tp902.RX_STATUS
-.. autodata:: tp902.RX_ALARM
-.. autodata:: tp902.RX_FW_VERSION
-.. autodata:: tp902.RX_AUTH
-.. autodata:: tp902.RX_ERROR
-
-Value Constants
-~~~~~~~~~~~~~~~
-
-.. autodata:: tp902.UNITS_C
-.. autodata:: tp902.UNITS_F
-.. autodata:: tp902.SOUND_ON
-.. autodata:: tp902.SOUND_OFF
-.. autodata:: tp902.ALARM_OFF
-.. autodata:: tp902.ALARM_TARGET
-.. autodata:: tp902.ALARM_RANGE
-
-Authentication
-~~~~~~~~~~~~~~
-
-.. autodata:: tp902.AUTH_PACKET
-
-Time
-~~~~
-
-.. autodata:: tp902.EPOCH_2020
+.. autoclass:: tp90x.tp904.TP904
+   :members:
+   :undoc-members:
+   :show-inheritance:
