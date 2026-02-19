@@ -1,4 +1,4 @@
-"""TP904 concrete model implementation."""
+"""TP904 has 2 probes.  It's alarm setting mechanism differs from the TP902"""
 
 from .tp90xbase import TP90xBase
 
@@ -10,5 +10,5 @@ class TP904(TP90xBase):
 
     @classmethod
     def model_name(cls):
-        """Return stable model identifier."""
+        """Model Name - TP904"""
         return "TP904"
