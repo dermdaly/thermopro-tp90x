@@ -135,7 +135,7 @@ class AuthResponse:
 # --- Packet helpers ---
 
 
-def decode_temp_bcd(raw):
+def _decode_temp_bcd(raw):
     """Decode 2-byte BCD temperature.
 
     :param raw: 2 bytes
@@ -157,7 +157,7 @@ def decode_temp_bcd(raw):
     return value
 
 
-def encode_temp_bcd(value):
+def _encode_temp_bcd(value):
     """Encode float temperature to 2-byte BCD.
 
     :param value: float (°C), range -999.9 to 999.9
@@ -178,7 +178,7 @@ def encode_temp_bcd(value):
     return bytes([b0 & 0xFF, b1 & 0xFF])
 
 
-def build_packet(cmd, payload=b''):
+def _build_packet(cmd, payload=b''):
     """Build TP90x packet frame: CMD LEN DATA CHECKSUM.
 
     :param cmd: command byte
@@ -191,7 +191,7 @@ def build_packet(cmd, payload=b''):
     return header + payload + bytes([checksum])
 
 
-def verify_checksum(data):
+def _verify_checksum(data):
     """Verify packet checksum.
 
     :param data: raw packet bytes (at least 3 bytes)
@@ -572,12 +572,12 @@ class TP90xBase(ABC):
             t2 = b'\xff\xff'
             encodedMode = self.ALARM_OFF
         elif mode == AlarmMode.Target:
-            t1 = encode_temp_bcd(value1)
+            t1 = _encode_temp_bcd(value1)
             t2 = b'\x00\x00'
             encodedMode = self.ALARM_TARGET
         elif mode == AlarmMode.Range:
-            t1 = encode_temp_bcd(value1)
-            t2 = encode_temp_bcd(value2)
+            t1 = _encode_temp_bcd(value1)
+            t2 = _encode_temp_bcd(value2)
             encodedMode = self.ALARM_RANGE
         else:
             t1 = b'\xff\xff'
@@ -618,7 +618,7 @@ class TP90xBase(ABC):
     # --- Internal ---
 
     def _send(self, cmd, payload=b''):
-        pkt = build_packet(cmd, payload)
+        pkt = _build_packet(cmd, payload)
         self._transport.send(pkt)
 
     def _wait_response(self, expected_cmd, timeout_ms):
@@ -661,7 +661,7 @@ class TP90xBase(ABC):
             temps = []
             for i in range(self.NUM_PROBES):
                 offset = 5 + i * 2
-                val = decode_temp_bcd(data[offset:offset + 2])
+                val = _decode_temp_bcd(data[offset:offset + 2])
                 temps.append(Temperature(i + 1, val))
             return TemperatureBroadcast(battery, units, alarms, temps)
 
@@ -671,15 +671,15 @@ class TP90xBase(ABC):
             temps = []
             for i in range(self.NUM_PROBES):
                 offset = 4 + i * 2
-                val = decode_temp_bcd(data[offset:offset + 2])
+                val = _decode_temp_bcd(data[offset:offset + 2])
                 temps.append(Temperature(i + 1, val))
             return TemperatureActual(probe_count, alarms, temps)
 
         if cmd == self.RX_ALARM and pkt_len == 0x06 and len(data) >= 8:
             channel = data[2]
             mode = data[3]
-            val1 = decode_temp_bcd(data[4:6])
-            val2 = decode_temp_bcd(data[6:8])
+            val1 = _decode_temp_bcd(data[4:6])
+            val2 = _decode_temp_bcd(data[6:8])
             return AlarmConfig(channel, mode, val1, val2)
 
         if cmd == self.RX_FW_VERSION and pkt_len == 0x03 and len(data) >= 5:
