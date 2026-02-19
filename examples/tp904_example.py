@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 
-from tp90x import TP904, TemperatureBroadcast
+from tp90x import SearchMode, TP904, TemperatureBroadcast
 
 
 def on_temperature(broadcast: TemperatureBroadcast) -> None:
@@ -20,7 +20,7 @@ def main() -> int:
 
     with TP904.connect(
         args.name,
-        by="name",
+        by=SearchMode.NAME,
         scan_timeout=args.scan_timeout,
         on_temperature=on_temperature,
     ) as tp:

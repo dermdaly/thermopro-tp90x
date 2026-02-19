@@ -6,7 +6,7 @@ Forked from petrkr/thermopro-tp902:master
 """
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from .enums import AlarmMode
+from .enums import AlarmMode, SearchMode
 
 try:
     from time import ticks_ms, ticks_diff, ticks_add  # type: ignore
@@ -320,7 +320,7 @@ class TP90xBase(ABC):
         cls,
         identifier,
         *,
-        by="address",
+        by=SearchMode.ADDRESS,
         scan_timeout=10.0,
         connect_timeout=20.0,
         on_temperature=None,
@@ -328,9 +328,16 @@ class TP90xBase(ABC):
         """Connect using bleak by BLE address or advertised name."""
         from bleak import BleakScanner
 
-        if by == "address":
+        if isinstance(by, SearchMode):
+            by_value = by.value
+        elif isinstance(by, str):
+            by_value = by.strip().lower()
+        else:
+            raise TypeError("by must be SearchMode or str")
+
+        if by_value == SearchMode.ADDRESS.value:
             finder = BleakScanner.find_device_by_address
-        elif by == "name":
+        elif by_value == SearchMode.NAME.value:
             finder = BleakScanner.find_device_by_name
         else:
             raise ValueError("by must be 'address' or 'name'")

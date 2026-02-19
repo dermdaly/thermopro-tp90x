@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-from tp90x import AlarmMode, TP902, TP904, TP90xBase, TemperatureBroadcast
+from tp90x import AlarmMode, SearchMode, TP902, TP904, TP90xBase, TemperatureBroadcast
 
 
 class BroadcastCollector:
@@ -63,7 +63,7 @@ def connect_selected_model(
     identifier: str,
     collector: BroadcastCollector,
 ) -> TP90xBase:
-    by = "address" if search_mode == "a" else "name"
+    by = SearchMode.ADDRESS if search_mode == "a" else SearchMode.NAME
     return model_cls.connect(
         identifier,
         by=by,
