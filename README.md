@@ -9,7 +9,7 @@ BLE parser for ThermoPro TP90x wireless thermometers.
 This project is derived from the original ThermoPro TP902 work by Petr Kracik:
 - https://github.com/petrkracik/thermopro-tp902
 
-The current codebase has been substantially refactored for TP90x multi-model support.
+The current codebase has been refactored for TP90x multi-model support.
 
 ## Documentation
 
